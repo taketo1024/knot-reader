@@ -304,11 +304,44 @@ def validate_pd(PD):
     return all(v == 2 for v in counts.values()) and len(counts) == 2 * len(PD)
 
 
-def diagram_to_pd(binary):
+def sort_pd(PD):
+    """Order crossings by first entry `a` (incoming under-strand) ascending."""
+    return sorted(PD, key=lambda q: q[0])
+
+
+def crossing_signs(crossings):
+    """+1 / -1 per crossing from the oriented over/under tangents (y-up)."""
+    sign = {}
+    for ci, c in enumerate(crossings):
+        vo, vu = c['v_over'], c['v_under']
+        det = vo[1] * vu[0] - vo[0] * vu[1]  # det in y-up coords
+        sign[ci] = 1 if det > 0 else -1
+    return sign
+
+
+def gauss_code(info):
+    """Signed Gauss code along the oriented traversal, starting at edge 1.
+
+    Each crossing visit -> 'O'/'U' + crossing number (by first appearance) + sign.
+    """
+    order, edge_label, m = info['order'], info['edge_label'], info['m']
+    sign = crossing_signs(info['crossings'])
+    start_edge = next(j for j, lab in edge_label.items() if lab == 1)
+    seq, num = [], {}
+    for k in range(m):
+        _, ci, role = order[(start_edge + 1 + k) % m]
+        if ci not in num:
+            num[ci] = len(num) + 1
+        seq.append(("O" if role == 'over' else "U") + str(num[ci]) +
+                   ("+" if sign[ci] > 0 else "-"))
+    return seq
+
+
+def diagram_to_pd(binary, excl=8.0):
     """Full stages 2-5 for one cropped diagram (binary, 255=ink) -> PD code."""
     arcs = skeleton_arcs(binary)
     bridges = pair_bridges(arcs)
-    crossings = find_crossings(arcs, bridges)
+    crossings = find_crossings(arcs, bridges, excl=excl)
     steps = traverse(arcs, bridges)
     P, enc = build_encounters(arcs, bridges, crossings, steps)
     order, edge_label, m = label_edges(P, enc)

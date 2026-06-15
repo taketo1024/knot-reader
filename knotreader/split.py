@@ -9,6 +9,7 @@ survive for later over/under detection.
 from __future__ import annotations
 
 import subprocess
+import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -73,6 +74,24 @@ def find_diagrams(bw: np.ndarray, close_px: int = 25,
             binary=bw[y0:y1, x0:x1].copy(),
         ))
     return diagrams
+
+
+def load_gray(path: Path, dpi: int = 300, page: int = 1) -> np.ndarray:
+    """Read any supported input (pdf rasterized at `dpi`, else image) as gray."""
+    path = Path(path)
+    if path.suffix.lower() == ".pdf":
+        png = rasterize_pdf(path, page, dpi, Path(tempfile.mkdtemp()))
+        path = png
+    gray = cv2.imread(str(path), cv2.IMREAD_GRAYSCALE)
+    if gray is None:
+        raise ValueError(f"could not read image: {path}")
+    return gray
+
+
+def diagrams_from_path(path: Path, dpi: int = 300):
+    """Load any input and return (binary_full, [Diagram, ...])."""
+    binary = binarize(load_gray(path, dpi))
+    return binary, find_diagrams(binary)
 
 
 def split_page(pdf: Path, page: int = 1, dpi: int = 300,
