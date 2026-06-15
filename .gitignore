@@ -2,3 +2,6 @@
 __pycache__/
 *.pyc
 out/
+
+# input examples (not committed)
+*.pdf
