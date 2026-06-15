@@ -123,13 +123,19 @@ def _seg_int(p1, p2, p3, p4):
     return None
 
 
-def find_crossings(arcs, bridges, excl=12.0):
-    """Each bridge-arc intersection is a crossing (bridge=under, arc=over)."""
+def find_crossings(arcs, bridges, excl=12.0, merge=15.0):
+    """Each bridge-arc intersection is a crossing (bridge=under, arc=over).
+
+    A straight bridge can clip the same arc polyline at a shared vertex and be
+    counted twice; intersections of the *same* bridge+arc within `merge` px are
+    one crossing, so we keep only the first of each such cluster.
+    """
     crossings = []
     for bi, (b0, b1, (aA, _), (aB, _)) in enumerate(bridges):
         for ai, poly in enumerate(arcs):
             if ai == aA or ai == aB:
                 continue
+            hits = []
             for k in range(len(poly) - 1):
                 r = _seg_int(b0, b1, poly[k], poly[k + 1])
                 if r is None:
@@ -137,7 +143,10 @@ def find_crossings(arcs, bridges, excl=12.0):
                 t, u, ip = r
                 if np.linalg.norm(ip - b0) < excl or np.linalg.norm(ip - b1) < excl:
                     continue
-                crossings.append(dict(pt=ip, bridge=bi, tb=t, arc=ai, sa=k + u))
+                if any(np.linalg.norm(ip - h['pt']) < merge for h in hits):
+                    continue
+                hits.append(dict(pt=ip, bridge=bi, tb=t, arc=ai, sa=k + u))
+            crossings.extend(hits)
     return crossings
 
 
