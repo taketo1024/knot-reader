@@ -76,10 +76,23 @@ def find_diagrams(bw: np.ndarray, close_px: int = 25,
     return diagrams
 
 
+def pdf_page_count(pdf: Path) -> int:
+    """Number of pages in a PDF (via pdfinfo)."""
+    out = subprocess.run(["pdfinfo", str(pdf)], capture_output=True, text=True, check=True)
+    for line in out.stdout.splitlines():
+        if line.lower().startswith("pages:"):
+            return int(line.split(":", 1)[1])
+    raise ValueError("could not determine PDF page count")
+
+
 def load_gray(path: Path, dpi: int = 300, page: int = 1) -> np.ndarray:
-    """Read any supported input (pdf rasterized at `dpi`, else image) as gray."""
+    """Read any supported input (single-page pdf rasterized at `dpi`, else image)."""
     path = Path(path)
     if path.suffix.lower() == ".pdf":
+        n = pdf_page_count(path)
+        if n != 1:
+            raise ValueError(
+                f"PDF has {n} pages; please supply a single-page PDF or an image.")
         png = rasterize_pdf(path, page, dpi, Path(tempfile.mkdtemp()))
         path = png
     gray = cv2.imread(str(path), cv2.IMREAD_GRAYSCALE)
