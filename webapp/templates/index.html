@@ -6,7 +6,7 @@
   <title>Knot Reader — diagram → PD code</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <script>
     tailwind.config = { theme: { extend: {
       fontFamily: { sans: ['Inter', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'] },
@@ -19,41 +19,38 @@
     .spinner { animation: spin 0.7s linear infinite; }
   </style>
 </head>
-<body class="h-full bg-slate-50 text-slate-800">
+<body class="h-full bg-white text-neutral-900">
   <div class="min-h-full">
     <!-- Header -->
-    <header class="bg-gradient-to-r from-indigo-600 via-violet-600 to-fuchsia-600 text-white shadow-lg">
-      <div class="max-w-5xl mx-auto px-6 py-8">
-        <h1 class="text-3xl font-bold tracking-tight flex items-center gap-3">
-          <span class="text-4xl">🪢</span> Knot Reader
-        </h1>
-        <p class="mt-1 text-indigo-100">Upload a knot diagram (PNG / JPG / PDF) and extract its Gauss &amp; PD codes.</p>
+    <header class="border-b border-neutral-200">
+      <div class="max-w-5xl mx-auto px-6 py-7">
+        <h1 class="text-2xl font-semibold tracking-tight">Knot Reader</h1>
+        <p class="mt-1 text-sm text-neutral-500">Extract Gauss &amp; PD codes from a knot diagram (PNG / JPG / PDF).</p>
       </div>
     </header>
 
-    <main class="max-w-5xl mx-auto px-6 py-8 space-y-8">
+    <main class="max-w-5xl mx-auto px-6 py-8 space-y-6">
       <!-- Controls -->
-      <section class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 p-6">
+      <section class="rounded-lg border border-neutral-200 p-6">
         <div id="dropzone"
-             class="border-2 border-dashed border-slate-300 rounded-xl p-10 text-center cursor-pointer transition hover:border-indigo-400 hover:bg-indigo-50/40">
+             class="border border-dashed border-neutral-300 rounded-lg p-10 text-center cursor-pointer transition hover:border-neutral-500 hover:bg-neutral-50">
           <input id="fileInput" type="file" accept=".png,.jpg,.jpeg,.pdf,image/*,application/pdf" class="hidden" />
-          <div class="text-5xl mb-3">📤</div>
-          <p class="font-medium text-slate-700">Drop an image here, or <span class="text-indigo-600">browse</span></p>
-          <p id="fileName" class="mt-2 text-sm text-slate-400">No file selected</p>
+          <p class="text-sm text-neutral-600">Drop an image here, or <span class="underline underline-offset-2">browse</span></p>
+          <p id="fileName" class="mt-2 text-sm text-neutral-400">No file selected</p>
         </div>
 
         <div class="mt-6 grid sm:grid-cols-[1fr_auto] gap-6 items-end">
           <div>
-            <label class="flex items-center justify-between text-sm font-medium text-slate-700">
-              <span>Sensitivity <span class="text-slate-400 font-normal">(lower = detect tighter crossings)</span></span>
-              <span class="mono text-indigo-600">excl = <span id="exclVal">8</span> px</span>
+            <label class="flex items-center justify-between text-sm text-neutral-700">
+              <span>Sensitivity <span class="text-neutral-400">— lower detects tighter crossings</span></span>
+              <span class="mono text-neutral-500">excl = <span id="exclVal">8</span> px</span>
             </label>
             <input id="excl" type="range" min="2" max="15" step="1" value="8"
-                   class="w-full mt-2 accent-indigo-600" />
+                   class="w-full mt-2 accent-neutral-800" />
           </div>
           <button id="runBtn"
-                  class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-indigo-600 text-white font-semibold shadow-sm hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition">
-            <svg id="spinner" class="spinner hidden w-5 h-5" viewBox="0 0 24 24" fill="none">
+                  class="inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg bg-neutral-900 text-white text-sm font-medium hover:bg-neutral-700 disabled:opacity-40 disabled:cursor-not-allowed transition">
+            <svg id="spinner" class="spinner hidden w-4 h-4" viewBox="0 0 24 24" fill="none">
               <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="3" stroke-opacity="0.3"/>
               <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
             </svg>
@@ -62,20 +59,20 @@
         </div>
       </section>
 
-      <div id="error" class="hidden bg-red-50 ring-1 ring-red-200 text-red-700 rounded-xl p-4"></div>
+      <div id="error" class="hidden rounded-lg border border-red-200 bg-red-50 text-red-700 text-sm p-4"></div>
 
       <!-- Results -->
-      <section id="results" class="space-y-8"></section>
+      <section id="results" class="space-y-6"></section>
     </main>
 
-    <footer class="max-w-5xl mx-auto px-6 py-8 text-center text-sm text-slate-400">
-      knot-reader · circled crossings &amp; numbered edges overlay
+    <footer class="max-w-5xl mx-auto px-6 py-10 text-xs text-neutral-400">
+      knot-reader · circled crossings &amp; numbered edges
     </footer>
   </div>
 
   <!-- Lightbox -->
   <div id="lightbox" class="hidden fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-8 cursor-zoom-out">
-    <img id="lightboxImg" class="max-h-full max-w-full rounded-lg shadow-2xl" />
+    <img id="lightboxImg" class="max-h-full max-w-full rounded shadow-2xl" />
   </div>
 
   <script>
@@ -88,16 +85,16 @@
     function setFile(f) {
       file = f;
       $('fileName').textContent = f ? `${f.name} (${(f.size/1024).toFixed(0)} KB)` : 'No file selected';
-      $('fileName').classList.toggle('text-slate-400', !f);
-      $('fileName').classList.toggle('text-slate-700', !!f);
+      $('fileName').classList.toggle('text-neutral-400', !f);
+      $('fileName').classList.toggle('text-neutral-700', !!f);
     }
     dropzone.addEventListener('click', () => fileInput.click());
     fileInput.addEventListener('change', e => setFile(e.target.files[0]));
     ['dragover','dragenter'].forEach(ev => dropzone.addEventListener(ev, e => {
-      e.preventDefault(); dropzone.classList.add('border-indigo-500','bg-indigo-50');
+      e.preventDefault(); dropzone.classList.add('border-neutral-500','bg-neutral-50');
     }));
     ['dragleave','drop'].forEach(ev => dropzone.addEventListener(ev, e => {
-      e.preventDefault(); dropzone.classList.remove('border-indigo-500','bg-indigo-50');
+      e.preventDefault(); dropzone.classList.remove('border-neutral-500','bg-neutral-50');
     }));
     dropzone.addEventListener('drop', e => { if (e.dataTransfer.files[0]) setFile(e.dataTransfer.files[0]); });
 
@@ -119,32 +116,32 @@
       return `
         <div>
           <div class="flex items-center justify-between mb-1">
-            <span class="text-xs font-semibold uppercase tracking-wide text-slate-500">${label}</span>
-            <button data-copy="${id}" class="text-xs text-indigo-600 hover:text-indigo-800 font-medium">Copy</button>
+            <span class="text-xs font-medium uppercase tracking-wide text-neutral-400">${label}</span>
+            <button data-copy="${id}" class="text-xs text-neutral-500 hover:text-neutral-900">Copy</button>
           </div>
-          <pre id="${id}" class="mono text-xs bg-slate-900 text-slate-100 rounded-lg p-3 overflow-x-auto whitespace-pre-wrap break-all">${text}</pre>
+          <pre id="${id}" class="mono text-xs bg-neutral-50 text-neutral-800 border border-neutral-200 rounded-lg p-3 overflow-x-auto whitespace-pre-wrap break-all">${text}</pre>
         </div>`;
     }
 
     function diagramCard(d) {
       if (d.error) {
-        return `<div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 p-6">
-                  <h3 class="font-semibold">${d.name}</h3>
+        return `<div class="rounded-lg border border-neutral-200 p-6">
+                  <h3 class="font-medium">${d.name}</h3>
                   <p class="text-red-600 text-sm mt-2">Error: ${d.error}</p></div>`;
       }
       const badge = d.valid
-        ? '<span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-xs font-medium">valid</span>'
-        : '<span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-xs font-medium">check</span>';
+        ? '<span class="px-2 py-0.5 rounded-full bg-neutral-100 text-neutral-600 text-xs">valid</span>'
+        : '<span class="px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 text-xs">check</span>';
       return `
-        <div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 overflow-hidden">
-          <div class="px-6 py-4 border-b border-slate-100 flex items-center gap-3">
-            <h3 class="font-semibold text-slate-800">${d.name}</h3>
-            <span class="px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 text-xs font-medium">${d.crossings} crossings</span>
+        <div class="rounded-lg border border-neutral-200 overflow-hidden">
+          <div class="px-6 py-3.5 border-b border-neutral-200 flex items-center gap-3">
+            <h3 class="font-medium text-neutral-900">${d.name}</h3>
+            <span class="px-2 py-0.5 rounded-full bg-neutral-100 text-neutral-600 text-xs">${d.crossings} crossings</span>
             ${badge}
           </div>
           <div class="grid md:grid-cols-2 gap-6 p-6">
             <img src="${d.overlay}" data-zoom
-                 class="w-full rounded-lg ring-1 ring-slate-200 cursor-zoom-in bg-white" />
+                 class="w-full rounded border border-neutral-200 cursor-zoom-in bg-white" />
             <div class="space-y-4">
               ${codeBlock('Gauss code', d.gauss)}
               ${codeBlock('PD code', d.pd)}
@@ -167,12 +164,12 @@
         if (!res.ok) { showError(data.error || 'Processing failed.'); return; }
 
         let html = `
-          <div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 overflow-hidden">
-            <div class="px-6 py-4 border-b border-slate-100">
-              <h2 class="font-semibold">Processed image — ${data.count} diagram(s) detected</h2>
+          <div class="rounded-lg border border-neutral-200 overflow-hidden">
+            <div class="px-6 py-3.5 border-b border-neutral-200">
+              <h2 class="font-medium text-sm text-neutral-700">Processed image — ${data.count} diagram(s) detected</h2>
             </div>
             <div class="p-6">
-              <img src="${data.processed}" data-zoom class="max-h-96 mx-auto rounded-lg ring-1 ring-slate-200 cursor-zoom-in" />
+              <img src="${data.processed}" data-zoom class="max-h-96 mx-auto rounded border border-neutral-200 cursor-zoom-in" />
             </div>
           </div>`;
         html += data.results.map(diagramCard).join('');
@@ -183,7 +180,7 @@
         document.querySelectorAll('[data-copy]').forEach(btn =>
           btn.addEventListener('click', async () => {
             await navigator.clipboard.writeText($(btn.dataset.copy).textContent);
-            btn.textContent = 'Copied!'; setTimeout(() => btn.textContent = 'Copy', 1200);
+            btn.textContent = 'Copied'; setTimeout(() => btn.textContent = 'Copy', 1200);
           }));
       } catch (e) {
         showError('Request failed: ' + e.message);
