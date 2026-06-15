@@ -3,5 +3,5 @@ __pycache__/
 *.pyc
 out/
 
-# input examples (not committed)
-*.pdf
+# input data (not committed)
+sample/

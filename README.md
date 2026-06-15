@@ -25,9 +25,10 @@ python3.12 -m venv .venv
 ## Command line
 
 Input is an image (PNG / JPG) or a **single-page** PDF (multi-page PDFs are rejected).
+Put your own diagram images in `sample/` (gitignored); none is bundled in the repo.
 
 ```bash
-./.venv/bin/python -m knotreader sample_knot.jpg --excl 8 --out out
+./.venv/bin/python -m knotreader sample/your_diagram.png --excl 8 --out out
 ```
 
 Prints the Gauss + PD codes per detected diagram and writes `*_overlay.png` to `out/`.
