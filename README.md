@@ -24,8 +24,10 @@ python3.12 -m venv .venv
 
 ## Command line
 
+Input is an image (PNG / JPG) or a **single-page** PDF (multi-page PDFs are rejected).
+
 ```bash
-./.venv/bin/python -m knotreader exotic_disk.pdf --page 1 --excl 8 --out out
+./.venv/bin/python -m knotreader sample_knot.jpg --excl 8 --out out
 ```
 
 Prints the Gauss + PD codes per detected diagram and writes `*_overlay.png` to `out/`.
@@ -38,3 +40,7 @@ Prints the Gauss + PD codes per detected diagram and writes `*_overlay.png` to `
 
 Upload an image, adjust **sensitivity** (`excl`: lower detects tighter crossings),
 and get the processed image, the crossing/edge overlay, and the Gauss + PD codes.
+
+## License
+
+MIT — see [LICENSE](LICENSE).
