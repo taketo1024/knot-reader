@@ -41,6 +41,11 @@ Prints the Gauss + PD codes per detected diagram and writes `*_overlay.png` to `
 Upload an image, adjust **sensitivity** (`excl`: lower detects tighter crossings),
 and get the processed image, the crossing/edge overlay, and the Gauss + PD codes.
 
+## Credits
+
+Developed by [Claude Code](https://claude.com/claude-code) under the direction of
+Taketo Sano.
+
 ## License
 
 MIT — see [LICENSE](LICENSE).
