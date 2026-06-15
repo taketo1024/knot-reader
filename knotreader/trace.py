@@ -146,21 +146,21 @@ def _seg_int(p1, p2, p3, p4):
     return None
 
 
-def find_crossings(arcs, bridges, excl=12.0, merge=15.0):
+def find_crossings(arcs, bridges, excl=8.0, merge=10.0):
     """Each bridge-arc intersection is a crossing (bridge=under, arc=over).
 
-    A straight bridge can clip the same arc polyline at a shared vertex and be
-    counted twice; intersections of the *same* bridge+arc within `merge` px are
-    one crossing, so we keep only the first of each such cluster.
+    Own connecting arcs are NOT skipped: a strand can cross itself (an R1 kink
+    on a small loop). The connection point lies at the bridge endpoint and is
+    removed by the `excl` endpoint filter; a genuine self-crossing sits farther
+    along and survives. A bridge can also clip the same arc polyline at a shared
+    vertex and be counted twice, so same-(bridge,arc) hits within `merge` px are
+    treated as one crossing.
     """
     crossings = []
     for bi, br in enumerate(bridges):
         bp = br['poly']
         nseg = len(bp) - 1
-        aA, aB = br['nA'][0], br['nB'][0]
         for ai, poly in enumerate(arcs):
-            if ai == aA or ai == aB:
-                continue
             hits = []
             for bk in range(nseg):
                 for k in range(len(poly) - 1):
