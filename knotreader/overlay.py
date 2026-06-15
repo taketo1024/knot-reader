@@ -15,8 +15,8 @@ def draw_overlay(gray, info):
     P, order, edge_label, m = info['P'], info['order'], info['edge_label'], info['m']
 
     # under-passages (bridges) — these are the strands the algorithm puts UNDER
-    for b0, b1, _, _ in info['bridges']:
-        cv2.line(vis, tuple(b0.astype(int)), tuple(b1.astype(int)), (0, 140, 255), 1)
+    for br in info['bridges']:
+        cv2.polylines(vis, [br['poly'].astype(np.int32)], False, (0, 140, 255), 1)
 
     # crossings
     for c in info['crossings']:

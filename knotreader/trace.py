@@ -73,8 +73,28 @@ def _end_velocity(poly, at_start, win=22):
     return d / nrm if nrm else d
 
 
+def _hermite(p0, v0, p1, v1, n=16, scale=0.5):
+    """Curve from p0 to p1; travels out of p0 along v0 and into p1 along -v1.
+
+    (v0, v1 are the outward endpoint velocities, each pointing away from its
+    arc body toward the gap, so the under-passage's travel tangent at p1 is -v1.)
+    """
+    dist = np.linalg.norm(p1 - p0)
+    m0, m1 = v0 * dist * scale, -v1 * dist * scale
+    t = np.linspace(0, 1, n)[:, None]
+    h00 = 2 * t**3 - 3 * t**2 + 1
+    h10 = t**3 - 2 * t**2 + t
+    h01 = -2 * t**3 + 3 * t**2
+    h11 = t**3 - t**2
+    return h00 * p0 + h10 * m0 + h01 * p1 + h11 * m1
+
+
 def pair_bridges(arcs, max_gap=150.0, min_cos=0.5):
-    """Pair arc endpoints whose velocities continue into each other across a gap."""
+    """Pair arc endpoints whose velocities continue into each other across a gap.
+
+    Each bridge is a dict: p0/p1 (endpoints), v0/v1 (outward velocities),
+    nA/nB ((arc, which-end) nodes), poly (Hermite-sampled curve p0->p1).
+    """
     ends = []  # (pt, vel, arc_idx, which-end)
     for ai, poly in enumerate(arcs):
         ends.append((poly[0], _end_velocity(poly, True), ai, 0))
@@ -103,8 +123,11 @@ def pair_bridges(arcs, max_gap=150.0, min_cos=0.5):
         if i in used or j in used:
             continue
         used |= {i, j}
-        bridges.append((ends[i][0], ends[j][0],
-                        (ends[i][2], ends[i][3]), (ends[j][2], ends[j][3])))
+        p0, v0, aA, wA = ends[i]
+        p1, v1, aB, wB = ends[j]
+        bridges.append(dict(p0=p0, p1=p1, v0=v0, v1=v1,
+                            nA=(aA, wA), nB=(aB, wB),
+                            poly=_hermite(p0, v0, p1, v1)))
     return bridges
 
 
@@ -131,21 +154,26 @@ def find_crossings(arcs, bridges, excl=12.0, merge=15.0):
     one crossing, so we keep only the first of each such cluster.
     """
     crossings = []
-    for bi, (b0, b1, (aA, _), (aB, _)) in enumerate(bridges):
+    for bi, br in enumerate(bridges):
+        bp = br['poly']
+        nseg = len(bp) - 1
+        aA, aB = br['nA'][0], br['nB'][0]
         for ai, poly in enumerate(arcs):
             if ai == aA or ai == aB:
                 continue
             hits = []
-            for k in range(len(poly) - 1):
-                r = _seg_int(b0, b1, poly[k], poly[k + 1])
-                if r is None:
-                    continue
-                t, u, ip = r
-                if np.linalg.norm(ip - b0) < excl or np.linalg.norm(ip - b1) < excl:
-                    continue
-                if any(np.linalg.norm(ip - h['pt']) < merge for h in hits):
-                    continue
-                hits.append(dict(pt=ip, bridge=bi, tb=t, arc=ai, sa=k + u))
+            for bk in range(nseg):
+                for k in range(len(poly) - 1):
+                    r = _seg_int(bp[bk], bp[bk + 1], poly[k], poly[k + 1])
+                    if r is None:
+                        continue
+                    tloc, u, ip = r
+                    if np.linalg.norm(ip - bp[0]) < excl or np.linalg.norm(ip - bp[-1]) < excl:
+                        continue
+                    if any(np.linalg.norm(ip - h['pt']) < merge for h in hits):
+                        continue
+                    tb = (bk + tloc) / nseg  # parameter along bridge in [0,1]
+                    hits.append(dict(pt=ip, bridge=bi, tb=tb, arc=ai, sa=k + u))
             crossings.extend(hits)
     return crossings
 
@@ -155,9 +183,9 @@ def find_crossings(arcs, bridges, excl=12.0, merge=15.0):
 def traverse(arcs, bridges):
     """Walk the alternating arc/bridge cycle; return ordered steps."""
     adj = {}
-    for bi, (_, _, nA, nB) in enumerate(bridges):
-        adj[nA] = (nB, bi, 0)
-        adj[nB] = (nA, bi, 1)
+    for bi, br in enumerate(bridges):
+        adj[br['nA']] = (br['nB'], bi, 0)
+        adj[br['nB']] = (br['nA'], bi, 1)
 
     steps, start, cur, guard = [], (0, 0), (0, 0), 0
     while True:
@@ -190,13 +218,14 @@ def build_encounters(arcs, bridges, crossings, steps):
                 pos = sa if asc else (len(arcs[idx]) - 1 - sa)
                 enc.append((base + int(round(pos)), ci, 'over'))
         else:
-            b0, b1, _, _ = bridges[idx]
-            seg = np.linspace(b0 if asc else b1, b1 if asc else b0, 8)
+            bp = bridges[idx]['poly']
+            seg = bp if asc else bp[::-1]
             P.extend(map(tuple, seg))
+            last = len(seg) - 1
             for ci in sorted(by_bridge[idx], key=lambda c: crossings[c]['tb'], reverse=not asc):
                 tb = crossings[ci]['tb']
                 tt = tb if asc else 1 - tb
-                enc.append((base + int(round(tt * 7)), ci, 'under'))
+                enc.append((base + int(round(tt * last)), ci, 'under'))
 
     enc.sort(key=lambda e: e[0])
     return np.array(P, float), enc
@@ -241,8 +270,9 @@ def assemble_pd(arcs, bridges, crossings, steps, order, edge_label, m):
         (arc_fwd if kind == 'arc' else bri_asc)[idx] = d
 
     for c in crossings:
-        b0, b1, _, _ = bridges[c['bridge']]
-        vb = b1 - b0
+        bp = bridges[c['bridge']]['poly']
+        k = int(np.clip(round(c['tb'] * (len(bp) - 1)), 1, len(bp) - 2))
+        vb = bp[k + 1] - bp[k - 1]
         vb = vb / np.linalg.norm(vb)
         c['v_under'] = vb if bri_asc[c['bridge']] else -vb
         va = _arc_tangent(arcs[c['arc']], c['sa'])
