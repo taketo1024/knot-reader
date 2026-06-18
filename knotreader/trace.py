@@ -191,7 +191,12 @@ def traverse(arcs, bridges):
     while True:
         a, e = cur
         steps.append(('arc', a, e == 0))
-        partner, bi, side = adj[(a, 1 - e)]
+        key = (a, 1 - e)
+        if key not in adj:
+            raise ValueError(
+                "could not pair all strands into a closed curve — the image may be "
+                "too low-resolution or noisy. Try a larger/cleaner scan.")
+        partner, bi, side = adj[key]
         steps.append(('bridge', bi, side == 0))
         cur = partner
         guard += 1
