@@ -80,7 +80,9 @@
     const dropzone = $('dropzone'), fileInput = $('fileInput');
     let file = null;
 
+    // live value while dragging; re-run on release if an image is already loaded
     $('excl').addEventListener('input', e => $('exclVal').textContent = e.target.value);
+    $('excl').addEventListener('change', () => { if (file) run(); });
 
     function setFile(f) {
       file = f;
