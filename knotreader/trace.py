@@ -231,25 +231,28 @@ def build_encounters(arcs, bridges, crossings, steps):
     return np.array(P, float), enc
 
 
-def label_edges(P, enc):
-    """Edges sit between consecutive encounters; number them bottommost=1, CCW."""
-    m = len(enc)
-    pos = [e[0] for e in enc]
-
-    # orient CCW on the page: shoelace with y flipped (y-up); positive => CCW
+def signed_area(P):
+    """Shoelace area with y flipped to y-up; > 0 means counterclockwise on the page."""
     x, y = P[:, 0], -P[:, 1]
-    area = 0.5 * np.sum(x * np.roll(y, -1) - np.roll(x, -1) * y)
-    order = enc if area > 0 else enc[::-1]
+    return 0.5 * np.sum(x * np.roll(y, -1) - np.roll(x, -1) * y)
 
-    # start at the edge containing the bottommost (max-y) point
+
+def label_edges(P, enc):
+    """Number edges between consecutive encounters; the bottommost edge is 1.
+
+    Assumes the curve is already oriented (see diagram_to_pd): `enc` positions
+    index into `P` in increasing order. Edge j spans P[enc[j] .. enc[j+1]]; the
+    edge containing the bottommost (max-y) point becomes edge 1.
+    """
+    m = len(enc)
+    order = enc
     bottom = int(np.argmax(P[:, 1]))
-    start = 0
+    start = m - 1  # wrap-around edge, used when bottom precedes the first encounter
     for j in range(m):
-        a, b = order[j][0], order[(j + 1) % m][0]
-        if (a <= bottom <= b) or (b < a and (bottom >= a or bottom <= b)):
+        if order[j][0] <= bottom:
             start = j
+        else:
             break
-
     edge_label = {(start + k) % m: k + 1 for k in range(m)}
     return order, edge_label, m
 
@@ -344,6 +347,9 @@ def diagram_to_pd(binary, excl=8.0):
     crossings = find_crossings(arcs, bridges, excl=excl)
     steps = traverse(arcs, bridges)
     P, enc = build_encounters(arcs, bridges, crossings, steps)
+    if signed_area(P) <= 0:  # orient CCW once: reverse the whole traversal
+        steps = [(kind, idx, not d) for (kind, idx, d) in reversed(steps)]
+        P, enc = build_encounters(arcs, bridges, crossings, steps)
     order, edge_label, m = label_edges(P, enc)
     PD = assemble_pd(arcs, bridges, crossings, steps, order, edge_label, m)
     return PD, dict(arcs=arcs, bridges=bridges, crossings=crossings, P=P,
